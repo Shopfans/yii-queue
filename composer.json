@@ -1,5 +1,5 @@
 {
-    "name": "yiisoft/yii2-queue",
+    "name": "evgeniy-webmaster/yii-queue",
     "description": "Yii2 Queue Extension which supported DB, Redis, RabbitMQ, Beanstalk, SQS and Gearman",
     "type": "yii2-extension",
     "keywords": ["yii", "queue", "async", "gii", "db", "redis", "rabbitmq", "beanstalk", "gearman", "sqs"],
@@ -17,24 +17,19 @@
     },
     "require": {
         "php": ">=5.5.0",
-        "yiisoft/yii2": "~2.0.14",
         "symfony/process": "^3.3||^4.0||^5.0||^6.0"
     },
     "require-dev": {
-        "yiisoft/yii2-redis": "*",
         "php-amqplib/php-amqplib": "*",
         "enqueue/amqp-lib": "^0.8||^0.9.10",
         "pda/pheanstalk": "v3.*",
         "opis/closure": "*",
-        "yiisoft/yii2-debug": "*",
-        "yiisoft/yii2-gii": "*",
         "phpunit/phpunit": "~4.4",
         "aws/aws-sdk-php": ">=2.4",
         "enqueue/stomp": "^0.8.39"
     },
     "suggest": {
         "ext-pcntl": "Need for process signals.",
-        "yiisoft/yii2-redis": "Need for Redis queue.",
         "pda/pheanstalk": "Need for Beanstalk queue.",
         "php-amqplib/php-amqplib": "Need for AMQP queue.",
         "enqueue/amqp-lib": "Need for AMQP interop queue.",
@@ -62,11 +57,6 @@
             "tests\\": "tests"
         }
     },
-    "config": {
-        "allow-plugins": {
-            "yiisoft/yii2-composer": true
-        }
-    },
     "extra": {
         "branch-alias": {
             "dev-master": "2.x-dev"
@@ -77,10 +67,5 @@
             "type": "composer",
             "url": "https://asset-packagist.org"
         }
-    ],
-    "config": {
-        "allow-plugins": {
-            "yiisoft/yii2-composer": true
-        }
-    }
+    ]
 }
