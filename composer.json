@@ -1,7 +1,7 @@
 {
     "name": "evgeniy-webmaster/yii-queue",
-    "description": "Yii2 Queue Extension which supported DB, Redis, RabbitMQ, Beanstalk, SQS and Gearman",
-    "type": "yii2-extension",
+    "description": "Yii Queue Extension which supported DB, Redis, RabbitMQ, Beanstalk, SQS and Gearman",
+    "type": "yii-extension",
     "keywords": ["yii", "queue", "async", "gii", "db", "redis", "rabbitmq", "beanstalk", "gearman", "sqs"],
     "license": "BSD-3-Clause",
     "authors": [
@@ -10,11 +10,6 @@
             "email": "zhuravljov@gmail.com"
         }
     ],
-    "support": {
-        "issues": "https://github.com/yiisoft/yii2-queue/issues",
-        "source": "https://github.com/yiisoft/yii2-queue",
-        "docs": "https://github.com/yiisoft/yii2-queue/blob/master/docs/guide"
-    },
     "require": {
         "php": ">=5.5.0",
         "symfony/process": "^3.3||^4.0||^5.0||^6.0"
