@@ -49,11 +49,14 @@ class Queue extends BaseQueue
     {
         parent::init();
         if ($this->handle) {
-            Yii::$app->on(Application::EVENT_AFTER_REQUEST, function () {
+            $handlersList = Yii::app()->getEventHandlers('onEndRequest');
+            Yii::app()->attachEventHandler('onEndRequest', function () {
                 ob_start();
                 $this->run();
                 ob_end_clean();
             });
+            $handler = $handlersList->removeAt($handlersList->count() - 1);
+            $handlersList->insertAt(0, $handler);
         }
     }
 

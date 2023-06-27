@@ -69,7 +69,7 @@ abstract class Queue extends BaseQueue implements BootstrapInterface
      */
     protected function getCommandId()
     {
-        foreach (Yii::$app->getComponents(false) as $id => $component) {
+        foreach (Yii::app()->getComponents(false) as $id => $component) {
             if ($component === $this) {
                 return Inflector::camel2id($id);
             }

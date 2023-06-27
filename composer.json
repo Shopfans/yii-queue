@@ -44,7 +44,10 @@
             "yii\\queue\\redis\\": "src/drivers/redis",
             "yii\\queue\\sync\\": "src/drivers/sync",
             "yii\\queue\\sqs\\": "src/drivers/sqs",
-            "yii\\queue\\stomp\\": "src/drivers/stomp"
+            "yii\\queue\\stomp\\": "src/drivers/stomp",
+            "yii\\base\\": "src-base",
+            "yii\\di\\": "src-base",
+            "yii\\helpers\\": "src-base"
         }
     },
     "autoload-dev": {

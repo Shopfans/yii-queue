@@ -49,7 +49,7 @@ class LogBehavior extends Behavior
     public function afterPush(PushEvent $event)
     {
         $title = $this->getJobTitle($event);
-        Yii::info("$title is pushed.", Queue::class);
+        Yii::log("$title is pushed.", \CLogger::LEVEL_INFO,Queue::class);
     }
 
     /**
@@ -58,7 +58,7 @@ class LogBehavior extends Behavior
     public function beforeExec(ExecEvent $event)
     {
         $title = $this->getExecTitle($event);
-        Yii::info("$title is started.", Queue::class);
+        Yii::log("$title is started.", \CLogger::LEVEL_INFO, Queue::class);
         Yii::beginProfile($title, Queue::class);
     }
 
@@ -69,7 +69,7 @@ class LogBehavior extends Behavior
     {
         $title = $this->getExecTitle($event);
         Yii::endProfile($title, Queue::class);
-        Yii::info("$title is finished.", Queue::class);
+        Yii::log("$title is finished.", \CLogger::LEVEL_INFO,Queue::class);
         if ($this->autoFlush) {
             Yii::getLogger()->flush(true);
         }
@@ -82,7 +82,7 @@ class LogBehavior extends Behavior
     {
         $title = $this->getExecTitle($event);
         Yii::endProfile($title, Queue::class);
-        Yii::error("$title is finished with error: $event->error.", Queue::class);
+        Yii::log("$title is finished with error: $event->error.", \CLogger::LEVEL_ERROR, Queue::class);
         if ($this->autoFlush) {
             Yii::getLogger()->flush(true);
         }
@@ -95,7 +95,7 @@ class LogBehavior extends Behavior
     public function workerStart(cli\WorkerEvent $event)
     {
         $title = 'Worker ' . $event->sender->getWorkerPid();
-        Yii::info("$title is started.", Queue::class);
+        Yii::log("$title is started.", \CLogger::LEVEL_INFO, Queue::class);
         Yii::beginProfile($title, Queue::class);
         if ($this->autoFlush) {
             Yii::getLogger()->flush(true);
@@ -110,7 +110,7 @@ class LogBehavior extends Behavior
     {
         $title = 'Worker ' . $event->sender->getWorkerPid();
         Yii::endProfile($title, Queue::class);
-        Yii::info("$title is stopped.", Queue::class);
+        Yii::log("$title is stopped.", \CLogger::LEVEL_INFO,Queue::class);
         if ($this->autoFlush) {
             Yii::getLogger()->flush(true);
         }

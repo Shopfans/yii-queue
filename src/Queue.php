@@ -11,7 +11,6 @@ use Yii;
 use yii\base\Component;
 use yii\base\InvalidArgumentException;
 use yii\base\InvalidConfigException;
-use yii\di\Instance;
 use yii\helpers\VarDumper;
 use yii\queue\serializers\PhpSerializer;
 use yii\queue\serializers\SerializerInterface;
@@ -90,7 +89,7 @@ abstract class Queue extends Component
     {
         parent::init();
 
-        $this->serializer = Instance::ensure($this->serializer, SerializerInterface::class);
+        $this->serializer = new $this->serializer;
 
         if (!is_numeric($this->ttr)) {
             throw new InvalidConfigException('Default TTR must be integer.');
