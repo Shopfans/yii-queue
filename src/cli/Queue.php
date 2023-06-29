@@ -69,7 +69,6 @@ abstract class Queue extends BaseQueue
     {
         $this->_workerPid = getmypid();
         /** @var LoopInterface $loop */
-        //$loop = Yii::createObject($this->loopConfig, [$this]);
         $loop = new $this->loopConfig($this);
 
         $event = new WorkerEvent(['loop' => $loop]);

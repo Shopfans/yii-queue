@@ -175,6 +175,11 @@ abstract class Command extends \CConsoleCommand
         // Child process command: php yii queue/exec "id" "ttr" "attempt" "pid"
         $cmd = [
             $this->phpBinary,
+            // '-dxdebug.remote_enable=1',
+            // '-dxdebug.remote_mode=req',
+            // '-dxdebug.remote_port=9000',
+            // '-dxdebug.remote_host=172.22.0.1',
+            // '-dxdebug.remote_connect_back=0', // for debug
             $_SERVER['SCRIPT_FILENAME'],
             $this->getName(),
             'exec',

@@ -81,7 +81,6 @@ abstract class Queue extends Component
     private $pushDelay;
     private $pushPriority;
 
-
     /**
      * @inheritdoc
      */

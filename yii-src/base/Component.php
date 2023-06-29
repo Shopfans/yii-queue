@@ -188,7 +188,21 @@ class Component extends BaseObject
         } elseif (strncmp($name, 'as ', 3) === 0) {
             // as behavior: attach behavior
             $name = trim(substr($name, 3));
-            $this->attachBehavior($name, $value instanceof Behavior ? $value : Yii::createObject($value));
+
+            if ($value instanceof Behavior) {
+                $behavior = $value;
+            } else {
+                if (is_array($value)) {
+                    $class = $value['class'];
+                    unset($value['class']);
+                    $behavior = new $class;
+                    self:self::configure($behavior, $value);
+                } else {
+                    $behavior = new $value;
+                }
+            }
+
+            $this->attachBehavior($name, $behavior);
 
             return;
         }
@@ -753,7 +767,8 @@ class Component extends BaseObject
     private function attachBehaviorInternal($name, $behavior)
     {
         if (!($behavior instanceof Behavior)) {
-            $behavior = Yii::createObject($behavior);
+            $class = is_array($behavior) ? $behavior['class'] : $behavior;
+            $behavior = new $class;
         }
         if (is_int($name)) {
             $behavior->attach($this);
