@@ -10,7 +10,7 @@ namespace yii\queue\cli;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Exception\RuntimeException as ProcessRuntimeException;
 use Symfony\Component\Process\Process;
-use yii\console\Controller;
+use yii\helpers\Console;
 use yii\queue\ExecEvent;
 
 /**
@@ -18,7 +18,7 @@ use yii\queue\ExecEvent;
  *
  * @author Roman Zhuravlev <zhuravljov@gmail.com>
  */
-abstract class Command extends Controller
+abstract class Command extends \CConsoleCommand
 {
     /**
      * The exit code of the exec action which is returned when job was done.
@@ -28,6 +28,12 @@ abstract class Command extends Controller
      * The exit code of the exec action which is returned when job wasn't done and wanted next attempt.
      */
     const EXEC_RETRY = 3;
+
+    /**
+     * @var bool|null whether to enable ANSI color in the output.
+     * If not set, ANSI color will only be enabled for terminals that support it.
+     */
+    public $color = false;
 
     /**
      * @var Queue
@@ -56,6 +62,10 @@ abstract class Command extends Controller
      */
     public $phpBinary;
 
+    public function init()
+    {
+        $this->queue = \Yii::app()->{$this->name};
+    }
 
     /**
      * @inheritdoc
@@ -112,13 +122,13 @@ abstract class Command extends Controller
     /**
      * @inheritdoc
      */
-    public function beforeAction($action)
+    public function beforeAction($action, $params)
     {
-        if ($this->canVerbose($action->id) && $this->verbose) {
+        if ($this->canVerbose($action) && $this->verbose) {
             $this->queue->attachBehavior('verbose', ['command' => $this] + $this->verboseConfig);
         }
 
-        if ($this->canIsolate($action->id) && $this->isolate) {
+        if ($this->canIsolate($action) && $this->isolate) {
             if ($this->phpBinary === null) {
                 $this->phpBinary = PHP_BINARY;
             }
@@ -127,7 +137,7 @@ abstract class Command extends Controller
             };
         }
 
-        return parent::beforeAction($action);
+        return parent::beforeAction($action, $params);
     }
 
     /**
@@ -166,21 +176,13 @@ abstract class Command extends Controller
         $cmd = [
             $this->phpBinary,
             $_SERVER['SCRIPT_FILENAME'],
-            $this->uniqueId . '/exec',
-            $id,
-            $ttr,
-            $attempt,
-            $this->queue->getWorkerPid() ?: 0,
+            $this->getName(),
+            'exec',
+            "--id=$id",
+            "--ttr=$ttr",
+            "--attempt=$attempt",
+            "--pid=" . $this->queue->getWorkerPid() ?: 0,
         ];
-
-        foreach ($this->getPassedOptions() as $name) {
-            if (in_array($name, $this->options('exec'), true)) {
-                $cmd[] = '--' . $name . '=' . $this->$name;
-            }
-        }
-        if (!in_array('color', $this->getPassedOptions(), true)) {
-            $cmd[] = '--color=' . $this->isColorEnabled();
-        }
 
         $process = new Process($cmd, null, null, $message, $ttr);
         try {
@@ -205,5 +207,98 @@ abstract class Command extends Controller
                 'error' => $error,
             ]));
         }
+    }
+
+    /**
+     * Returns a value indicating whether ANSI color is enabled.
+     *
+     * ANSI color is enabled only if [[color]] is set true or is not set
+     * and the terminal supports ANSI color.
+     *
+     * @param resource $stream the stream to check.
+     * @return bool Whether to enable ANSI style in output.
+     */
+    protected function isColorEnabled($stream = \STDOUT)
+    {
+        return $this->color === null ? Console::streamSupportsAnsiColors($stream) : $this->color;
+    }
+
+    /**
+     * Formats a string with ANSI codes.
+     *
+     * You may pass additional parameters using the constants defined in [[\yii\helpers\Console]].
+     *
+     * Example:
+     *
+     * ```
+     * echo $this->ansiFormat('This will be red and underlined.', Console::FG_RED, Console::UNDERLINE);
+     * ```
+     *
+     * @param string $string the string to be formatted
+     * @return string
+     */
+    protected function ansiFormat($string)
+    {
+        if ($this->isColorEnabled()) {
+            $args = func_get_args();
+            array_shift($args);
+            $string = Console::ansiFormat($string, $args);
+        }
+
+        return $string;
+    }
+
+    /**
+     * Prints a string to STDOUT.
+     *
+     * You may optionally format the string with ANSI codes by
+     * passing additional parameters using the constants defined in [[\yii\helpers\Console]].
+     *
+     * Example:
+     *
+     * ```
+     * $this->stdout('This will be red and underlined.', Console::FG_RED, Console::UNDERLINE);
+     * ```
+     *
+     * @param string $string the string to print
+     * @param int ...$args additional parameters to decorate the output
+     * @return int|bool Number of bytes printed or false on error
+     */
+    public function stdout($string)
+    {
+        if ($this->isColorEnabled()) {
+            $args = func_get_args();
+            array_shift($args);
+            $string = Console::ansiFormat($string, $args);
+        }
+
+        return Console::stdout($string);
+    }
+
+    /**
+     * Prints a string to STDERR.
+     *
+     * You may optionally format the string with ANSI codes by
+     * passing additional parameters using the constants defined in [[\yii\helpers\Console]].
+     *
+     * Example:
+     *
+     * ```
+     * $this->stderr('This will be red and underlined.', Console::FG_RED, Console::UNDERLINE);
+     * ```
+     *
+     * @param string $string the string to print
+     * @param int ...$args additional parameters to decorate the output
+     * @return int|bool Number of bytes printed or false on error
+     */
+    public function stderr($string)
+    {
+        if ($this->isColorEnabled(\STDERR)) {
+            $args = func_get_args();
+            array_shift($args);
+            $string = Console::ansiFormat($string, $args);
+        }
+
+        return fwrite(\STDERR, $string);
     }
 }

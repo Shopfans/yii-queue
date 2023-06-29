@@ -8,6 +8,7 @@
 namespace yii\queue\redis;
 
 use yii\console\Exception;
+use yii\helpers\Console;
 use yii\queue\cli\Command as CliCommand;
 
 /**
@@ -26,23 +27,49 @@ class Command extends CliCommand
      */
     public $defaultAction = 'info';
 
-
-    /**
-     * @inheritdoc
-     */
-    public function actions()
-    {
-        return [
-            'info' => InfoAction::class,
-        ];
-    }
-
     /**
      * @inheritdoc
      */
     protected function isWorkerAction($actionID)
     {
         return in_array($actionID, ['run', 'listen'], true);
+    }
+
+    /**
+     * @param string $string
+     * @return string
+     */
+    protected function format($string)
+    {
+        return call_user_func_array([$this, 'ansiFormat'], func_get_args());
+    }
+
+
+    /**
+     * Info about queue status.
+     */
+    public function actionInfo()
+    {
+        $prefix = $this->queue->channel;
+        $waiting = $this->queue->redis->llen("$prefix.waiting");
+        $delayed = $this->queue->redis->zcount("$prefix.delayed", '-inf', '+inf');
+        $reserved = $this->queue->redis->zcount("$prefix.reserved", '-inf', '+inf');
+        $total = $this->queue->redis->get("$prefix.message_id");
+        $done = $total - $waiting - $delayed - $reserved;
+
+        Console::output($this->format('Jobs', Console::FG_GREEN));
+
+        Console::stdout($this->format('- waiting: ', Console::FG_YELLOW));
+        Console::output($waiting);
+
+        Console::stdout($this->format('- delayed: ', Console::FG_YELLOW));
+        Console::output($delayed);
+
+        Console::stdout($this->format('- reserved: ', Console::FG_YELLOW));
+        Console::output($reserved);
+
+        Console::stdout($this->format('- done: ', Console::FG_YELLOW));
+        Console::output($done);
     }
 
     /**

@@ -8,7 +8,6 @@
 namespace yii\queue\sync;
 
 use Yii;
-use yii\base\Application;
 use yii\base\InvalidArgumentException;
 use yii\queue\Queue as BaseQueue;
 

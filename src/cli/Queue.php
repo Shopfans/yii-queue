@@ -19,7 +19,7 @@ use yii\queue\Queue as BaseQueue;
  *
  * @author Roman Zhuravlev <zhuravljov@gmail.com>
  */
-abstract class Queue extends BaseQueue implements BootstrapInterface
+abstract class Queue extends BaseQueue
 {
     /**
      * @event WorkerEvent that is triggered when the worker is started.
@@ -47,10 +47,6 @@ abstract class Queue extends BaseQueue implements BootstrapInterface
      */
     public $commandClass = Command::class;
     /**
-     * @var array of additional options of command
-     */
-    public $commandOptions = [];
-    /**
      * @var callable|null
      * @internal for worker command only
      */
@@ -61,34 +57,6 @@ abstract class Queue extends BaseQueue implements BootstrapInterface
      * @since 2.0.2
      */
     private $_workerPid;
-
-
-    /**
-     * @return string command id
-     * @throws
-     */
-    protected function getCommandId()
-    {
-        foreach (Yii::app()->getComponents(false) as $id => $component) {
-            if ($component === $this) {
-                return Inflector::camel2id($id);
-            }
-        }
-        throw new InvalidConfigException('Queue must be an application component.');
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function bootstrap($app)
-    {
-        if ($app instanceof ConsoleApp) {
-            $app->controllerMap[$this->getCommandId()] = [
-                'class' => $this->commandClass,
-                'queue' => $this,
-            ] + $this->commandOptions;
-        }
-    }
 
     /**
      * Runs worker.
@@ -101,7 +69,8 @@ abstract class Queue extends BaseQueue implements BootstrapInterface
     {
         $this->_workerPid = getmypid();
         /** @var LoopInterface $loop */
-        $loop = Yii::createObject($this->loopConfig, [$this]);
+        //$loop = Yii::createObject($this->loopConfig, [$this]);
+        $loop = new $this->loopConfig($this);
 
         $event = new WorkerEvent(['loop' => $loop]);
         $this->trigger(self::EVENT_WORKER_START, $event);
