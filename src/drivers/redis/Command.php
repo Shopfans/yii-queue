@@ -78,9 +78,12 @@ class Command extends CliCommand
      *
      * @return null|int exit code.
      */
-    public function actionRun()
+    public function actionRun($maxWorkerProcesses = 10)
     {
-        return $this->queue->run(false);
+        $this->maxWorkerProcesses = $maxWorkerProcesses;
+        return $this->queue->run(function () {
+            $this->waitForAllWorkerProcessesIsDone();
+        },false);
     }
 
     /**
@@ -91,7 +94,7 @@ class Command extends CliCommand
      * @throws Exception when params are invalid.
      * @return null|int exit code.
      */
-    public function actionListen($timeout = 3)
+    public function actionListen($timeout = 3, $maxWorkerProcesses = 10)
     {
         if (!is_numeric($timeout)) {
             throw new Exception('Timeout must be numeric.');
@@ -99,8 +102,18 @@ class Command extends CliCommand
         if ($timeout < 1) {
             throw new Exception('Timeout must be greater than zero.');
         }
+        if (!is_numeric($maxWorkerProcesses)) {
+            throw new Exception('maxWorkerProcesses must be numeric.');
+        }
+        if ($maxWorkerProcesses < 1) {
+            throw new Exception('maxWorkerProcesses must be greater than zero.');
+        }
 
-        return $this->queue->run(true, $timeout);
+        $this->maxWorkerProcesses = $maxWorkerProcesses;
+
+        return $this->queue->run(function () {
+            $this->waitForAllWorkerProcessesIsDone();
+        },true, $timeout);
     }
 
     /**

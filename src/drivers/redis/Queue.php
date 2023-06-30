@@ -52,15 +52,19 @@ class Queue extends CliQueue
      * @internal for worker command only.
      * @since 2.0.2
      */
-    public function run($repeat, $timeout = 0)
+    public function run($waitAllChildrenProcesses, $repeat, $timeout = 0)
     {
-        return $this->runWorker(function (callable $canContinue) use ($repeat, $timeout) {
-            while ($canContinue()) {
+        return $this->runWorker(function (callable $canContinue) use ($repeat, $timeout, $waitAllChildrenProcesses) {
+            while (true) {
+                if (!$canContinue()) {
+                    $waitAllChildrenProcesses();
+                    break;
+                }
                 if (($payload = $this->reserve($timeout)) !== null) {
                     list($id, $message, $ttr, $attempt) = $payload;
-                    if ($this->handleMessage($id, $message, $ttr, $attempt)) {
+                    $this->handleMessage($id, $message, $ttr, $attempt, function () use ($id) {
                         $this->delete($id);
-                    }
+                    });
                 } elseif (!$repeat) {
                     break;
                 }

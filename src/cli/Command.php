@@ -62,6 +62,10 @@ abstract class Command extends \CConsoleCommand
      */
     public $phpBinary;
 
+    protected $maxWorkerProcesses = 10;
+
+    private $processPool = [];
+
     public function init()
     {
         $this->queue = \Yii::app()->{$this->name};
@@ -132,8 +136,8 @@ abstract class Command extends \CConsoleCommand
             if ($this->phpBinary === null) {
                 $this->phpBinary = PHP_BINARY;
             }
-            $this->queue->messageHandler = function ($id, $message, $ttr, $attempt) {
-                return $this->handleMessage($id, $message, $ttr, $attempt);
+            $this->queue->messageHandler = function ($id, $message, $ttr, $attempt, $finishProcessCallback = null) {
+                return $this->handleMessage($id, $message, $ttr, $attempt, $finishProcessCallback);
             };
         }
 
@@ -159,6 +163,71 @@ abstract class Command extends \CConsoleCommand
         return self::EXEC_RETRY;
     }
 
+    private function waitForPoolIsNotFull()
+    {
+        if (count($this->processPool) >= $this->maxWorkerProcesses) {
+            while (true) {
+                sleep(1);
+                foreach ($this->processPool as $item) {
+                    /** @var Process $process */
+                    $process = $item['process'];
+                    if (!$process->isRunning()) {
+                        $this->handleProcessPool();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private function handleProcessPool()
+    {
+        foreach ($this->processPool as $key => $item) {
+            /** @var Process $process */
+            extract($item, EXTR_OVERWRITE);
+
+            try {
+                if ($process->isRunning()) {
+                    continue;
+                }
+
+                $result = $process->wait(function ($type, $buffer) {
+                    if ($type === Process::ERR) {
+                        $this->stderr($buffer);
+                    } else {
+                        $this->stdout($buffer);
+                    }
+                });
+                if (!in_array($result, [self::EXEC_DONE, self::EXEC_RETRY])) {
+                    throw new ProcessFailedException($process);
+                }
+
+                is_callable($finishCallback) && $finishCallback($result === self::EXEC_DONE);
+                unset($this->processPool[$key]);
+            } catch (ProcessRuntimeException $error) {
+                list($job) = $this->queue->unserializeMessage($message);
+                return $this->queue->handleError(new ExecEvent([
+                    'id' => $id,
+                    'job' => $job,
+                    'ttr' => $ttr,
+                    'attempt' => $attempt,
+                    'error' => $error,
+                ]));
+            }
+        }
+    }
+
+    protected function waitForAllWorkerProcessesIsDone()
+    {
+        while (true) {
+            $this->handleProcessPool();
+            if (count($this->processPool) === 0) {
+                return;
+            }
+            sleep(1);
+        }
+    }
+
     /**
      * Handles message using child process.
      *
@@ -170,8 +239,11 @@ abstract class Command extends \CConsoleCommand
      * @throws
      * @see actionExec()
      */
-    protected function handleMessage($id, $message, $ttr, $attempt)
+    protected function handleMessage($id, $message, $ttr, $attempt, $finishProcessCallback)
     {
+        $this->handleProcessPool();
+        $this->waitForPoolIsNotFull();
+
         // Child process command: php yii queue/exec "id" "ttr" "attempt" "pid"
         $cmd = [
             $this->phpBinary,
@@ -190,18 +262,16 @@ abstract class Command extends \CConsoleCommand
         ];
 
         $process = new Process($cmd, null, null, $message, $ttr);
+        $this->processPool[] = [
+            'process' => $process,
+            'message' => $message,
+            'id' => $id,
+            'ttr' => $ttr,
+            'attempt' => $attempt,
+            'finishCallback' => $finishProcessCallback,
+        ];
         try {
-            $result = $process->run(function ($type, $buffer) {
-                if ($type === Process::ERR) {
-                    $this->stderr($buffer);
-                } else {
-                    $this->stdout($buffer);
-                }
-            });
-            if (!in_array($result, [self::EXEC_DONE, self::EXEC_RETRY])) {
-                throw new ProcessFailedException($process);
-            }
-            return $result === self::EXEC_DONE;
+            $process->start();
         } catch (ProcessRuntimeException $error) {
             list($job) = $this->queue->unserializeMessage($message);
             return $this->queue->handleError(new ExecEvent([

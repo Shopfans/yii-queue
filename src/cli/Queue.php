@@ -106,13 +106,13 @@ abstract class Queue extends BaseQueue
     /**
      * @inheritdoc
      */
-    protected function handleMessage($id, $message, $ttr, $attempt)
+    protected function handleMessage($id, $message, $ttr, $attempt, $finishProcessCallback = null)
     {
         if ($this->messageHandler) {
-            return call_user_func($this->messageHandler, $id, $message, $ttr, $attempt);
+            return call_user_func($this->messageHandler, $id, $message, $ttr, $attempt, $finishProcessCallback);
         }
 
-        return parent::handleMessage($id, $message, $ttr, $attempt);
+        return parent::handleMessage($id, $message, $ttr, $attempt, $finishProcessCallback);
     }
 
     /**

@@ -223,7 +223,7 @@ abstract class Queue extends Component
      * @param int $attempt number
      * @return bool
      */
-    protected function handleMessage($id, $message, $ttr, $attempt)
+    protected function handleMessage($id, $message, $ttr, $attempt, $finishProcessCallback = null)
     {
         list($job, $error) = $this->unserializeMessage($message);
         $event = new ExecEvent([
@@ -250,6 +250,7 @@ abstract class Queue extends Component
             return $this->handleError($event);
         }
         $this->trigger(self::EVENT_AFTER_EXEC, $event);
+        is_callable($finishProcessCallback) && $finishProcessCallback(true);
         return true;
     }
 

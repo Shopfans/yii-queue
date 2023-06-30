@@ -1,5 +1,5 @@
 {
-    "name": "shopfans/yii-queue",
+    "name": "evgeniy-webmaster/yii-queue",
     "description": "Yii Queue Extension which supported DB, Redis, RabbitMQ, Beanstalk, SQS and Gearman",
     "type": "yii-extension",
     "keywords": ["yii", "queue", "async", "gii", "db", "redis", "rabbitmq", "beanstalk", "gearman", "sqs"],
