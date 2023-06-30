@@ -77,6 +77,10 @@ abstract class Queue extends Component
      */
     public $attempts = 1;
 
+    public $waitForAllWorkerProcessesIsDone;
+
+    public $handleProcessPool;
+
     private $pushTtr;
     private $pushDelay;
     private $pushPriority;

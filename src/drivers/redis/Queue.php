@@ -52,12 +52,15 @@ class Queue extends CliQueue
      * @internal for worker command only.
      * @since 2.0.2
      */
-    public function run($waitAllChildrenProcesses, $repeat, $timeout = 0)
+    public function run($repeat, $timeout = 0)
     {
-        return $this->runWorker(function (callable $canContinue) use ($repeat, $timeout, $waitAllChildrenProcesses) {
+        return $this->runWorker(function (callable $canContinue) use ($repeat, $timeout) {
             while (true) {
                 if (!$canContinue()) {
-                    $waitAllChildrenProcesses();
+                    if (is_callable($this->waitForAllWorkerProcessesIsDone)) {
+                        $func = $this->waitForAllWorkerProcessesIsDone;
+                        $func();
+                    }
                     break;
                 }
                 if (($payload = $this->reserve($timeout)) !== null) {
@@ -67,6 +70,10 @@ class Queue extends CliQueue
                     });
                 } elseif (!$repeat) {
                     break;
+                }
+                if (is_callable($this->handleProcessPool)) {
+                    $func = $this->handleProcessPool;
+                    $func();
                 }
             }
         });

@@ -81,9 +81,7 @@ class Command extends CliCommand
     public function actionRun($maxWorkerProcesses = 10)
     {
         $this->maxWorkerProcesses = $maxWorkerProcesses;
-        return $this->queue->run(function () {
-            $this->waitForAllWorkerProcessesIsDone();
-        },false);
+        return $this->queue->run(false);
     }
 
     /**
@@ -111,9 +109,7 @@ class Command extends CliCommand
 
         $this->maxWorkerProcesses = $maxWorkerProcesses;
 
-        return $this->queue->run(function () {
-            $this->waitForAllWorkerProcessesIsDone();
-        },true, $timeout);
+        return $this->queue->run(true, $timeout);
     }
 
     /**

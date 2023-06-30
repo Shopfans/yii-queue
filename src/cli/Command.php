@@ -69,6 +69,12 @@ abstract class Command extends \CConsoleCommand
     public function init()
     {
         $this->queue = \Yii::app()->{$this->name};
+        $this->queue->waitForAllWorkerProcessesIsDone = function () {
+            $this->waitForAllWorkerProcessesIsDone();
+        };
+        $this->queue->handleProcessPool = function () {
+            $this->handleProcessPool();
+        };
     }
 
     /**
@@ -205,6 +211,7 @@ abstract class Command extends \CConsoleCommand
                 is_callable($finishCallback) && $finishCallback($result === self::EXEC_DONE);
                 unset($this->processPool[$key]);
             } catch (ProcessRuntimeException $error) {
+                unset($this->processPool[$key]);
                 list($job) = $this->queue->unserializeMessage($message);
                 return $this->queue->handleError(new ExecEvent([
                     'id' => $id,
