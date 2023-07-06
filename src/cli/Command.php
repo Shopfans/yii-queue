@@ -62,6 +62,8 @@ abstract class Command extends \CConsoleCommand
      */
     public $phpBinary;
 
+    protected $xdebugClientIP;
+
     protected $maxWorkerProcesses = 10;
 
     private $processPool = [];
@@ -252,21 +254,35 @@ abstract class Command extends \CConsoleCommand
         $this->waitForPoolIsNotFull();
 
         // Child process command: php yii queue/exec "id" "ttr" "attempt" "pid"
-        $cmd = [
-            $this->phpBinary,
-            // '-dxdebug.remote_enable=1',
-            // '-dxdebug.remote_mode=req',
-            // '-dxdebug.remote_port=9000',
-            // '-dxdebug.remote_host=172.22.0.1',
-            // '-dxdebug.remote_connect_back=0', // for debug
-            $_SERVER['SCRIPT_FILENAME'],
-            $this->getName(),
-            'exec',
-            "--id=$id",
-            "--ttr=$ttr",
-            "--attempt=$attempt",
-            "--pid=" . $this->queue->getWorkerPid() ?: 0,
-        ];
+
+        if ($this->xdebugClientIP) {
+            $cmd = [
+                $this->phpBinary,
+                '-dxdebug.remote_enable=1',
+                '-dxdebug.remote_mode=req',
+                '-dxdebug.remote_port=9000',
+                '-dxdebug.remote_host=' . $this->xdebugClientIP,
+                '-dxdebug.remote_connect_back=0', // for debug
+                $_SERVER['SCRIPT_FILENAME'],
+                $this->getName(),
+                'exec',
+                "--id=$id",
+                "--ttr=$ttr",
+                "--attempt=$attempt",
+                "--pid=" . $this->queue->getWorkerPid() ?: 0,
+            ];
+        } else {
+            $cmd = [
+                $this->phpBinary,
+                $_SERVER['SCRIPT_FILENAME'],
+                $this->getName(),
+                'exec',
+                "--id=$id",
+                "--ttr=$ttr",
+                "--attempt=$attempt",
+                "--pid=" . $this->queue->getWorkerPid() ?: 0,
+            ];
+        }
 
         $process = new Process($cmd, null, null, $message, $ttr);
         $this->processPool[] = [

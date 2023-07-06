@@ -78,9 +78,10 @@ class Command extends CliCommand
      *
      * @return null|int exit code.
      */
-    public function actionRun($maxWorkerProcesses = 10)
+    public function actionRun($jobsXdebug = null)
     {
-        $this->maxWorkerProcesses = $maxWorkerProcesses;
+        $this->xdebugClientIP = $jobsXdebug;
+        $this->maxWorkerProcesses = 1;
         return $this->queue->run(false);
     }
 

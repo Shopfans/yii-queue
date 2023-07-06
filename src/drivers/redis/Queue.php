@@ -65,10 +65,14 @@ class Queue extends CliQueue
                 }
                 if (($payload = $this->reserve($timeout)) !== null) {
                     list($id, $message, $ttr, $attempt) = $payload;
-                    $this->handleMessage($id, $message, $ttr, $attempt, function () use ($id) {
-                        $this->delete($id);
+                    $this->handleMessage($id, $message, $ttr, $attempt, function ($done) use ($id) {
+                        $done && $this->delete($id);
                     });
                 } elseif (!$repeat) {
+                    if (is_callable($this->waitForAllWorkerProcessesIsDone)) {
+                        $func = $this->waitForAllWorkerProcessesIsDone;
+                        $func();
+                    }
                     break;
                 }
                 if (is_callable($this->handleProcessPool)) {
