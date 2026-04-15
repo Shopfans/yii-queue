@@ -164,6 +164,13 @@ class Queue extends CliQueue
         }
 
         $payload = $this->redis->hget("$this->channel.messages", $id);
+        // Payload may be missing or malformed if the message was removed (via remove()/clear())
+        // between popping the id from the waiting list and fetching the message body.
+        if (!is_string($payload) || strpos($payload, ';') === false) {
+            $this->redis->zrem("$this->channel.reserved", $id);
+            $this->redis->hdel("$this->channel.attempts", $id);
+            return null;
+        }
         list($ttr, $message) = explode(';', $payload, 2);
         $this->redis->zadd("$this->channel.reserved", time() + $ttr, $id);
         $attempt = $this->redis->hincrby("$this->channel.attempts", $id, 1);
