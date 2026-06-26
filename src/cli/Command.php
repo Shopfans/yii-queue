@@ -284,7 +284,7 @@ abstract class Command extends \CConsoleCommand
             ];
         }
 
-        $process = new Process($cmd, null, null, $message, $ttr);
+        $process = new Process($cmd, null, null, $message, $ttr !== '' && $ttr !== null ? (float)$ttr : null);
         $this->processPool[] = [
             'process' => $process,
             'message' => $message,
